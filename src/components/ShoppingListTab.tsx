@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { Button } from '@/components/ui/button';
@@ -119,68 +118,76 @@ const ShoppingListTab: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto p-6 flex justify-center items-center">
+      <div className="max-w-4xl mx-auto p-4 md:p-6 flex justify-center items-center">
         <Loader2 className="w-8 h-8 animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto p-4 md:p-6">
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold text-gray-800">Lista de Compras</CardTitle>
+          <CardTitle className="text-xl md:text-2xl font-bold text-gray-800">Lista de Compras</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Select value={newListItem.itemId} onValueChange={(value) => setNewListItem({ ...newListItem, itemId: value })} disabled={isSubmitting}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o item" />
-              </SelectTrigger>
-              <SelectContent className="bg-white max-h-48 overflow-y-auto">
-                {items.map((item) => (
-                  <SelectItem key={item.id} value={item.id}>
-                    {item.name} ({getCategoryName(item.category_id)})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Input
-              type="number"
-              placeholder="Quantidade"
-              min="1"
-              value={newListItem.quantity}
-              onChange={(e) => setNewListItem({ ...newListItem, quantity: parseInt(e.target.value) || 1 })}
-              disabled={isSubmitting}
-            />
-            <Input
-              type="number"
-              step="0.01"
-              placeholder="Valor unitário (R$)"
-              value={newListItem.unitPrice}
-              onChange={(e) => setNewListItem({ ...newListItem, unitPrice: e.target.value })}
-              disabled={isSubmitting}
-            />
-            <Button 
-              onClick={handleAddToList}
-              className="checkmarket-orange checkmarket-hover-orange"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
-              Adicionar
-            </Button>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+            <div className="md:col-span-1">
+              <Select value={newListItem.itemId} onValueChange={(value) => setNewListItem({ ...newListItem, itemId: value })} disabled={isSubmitting}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o item" />
+                </SelectTrigger>
+                <SelectContent className="bg-white max-h-48 overflow-y-auto">
+                  {items.map((item) => (
+                    <SelectItem key={item.id} value={item.id}>
+                      {item.name} ({getCategoryName(item.category_id)})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="md:col-span-1">
+              <Input
+                type="number"
+                placeholder="Quantidade"
+                min="1"
+                value={newListItem.quantity}
+                onChange={(e) => setNewListItem({ ...newListItem, quantity: parseInt(e.target.value) || 1 })}
+                disabled={isSubmitting}
+              />
+            </div>
+            <div className="md:col-span-1">
+              <Input
+                type="number"
+                step="0.01"
+                placeholder="Valor unitário (R$)"
+                value={newListItem.unitPrice}
+                onChange={(e) => setNewListItem({ ...newListItem, unitPrice: e.target.value })}
+                disabled={isSubmitting}
+              />
+            </div>
+            <div className="md:col-span-1">
+              <Button 
+                onClick={handleAddToList}
+                className="checkmarket-orange checkmarket-hover-orange w-full"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+                Adicionar
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
 
       {shoppingList.length > 0 && (
         <Card className="mb-6">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-xl font-bold text-gray-800">Itens na Lista</CardTitle>
+          <CardHeader className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
+            <CardTitle className="text-lg md:text-xl font-bold text-gray-800">Itens na Lista</CardTitle>
             <Button 
               onClick={handleClearList}
               variant="outline"
-              className="text-red-600 border-red-600 hover:bg-red-50"
+              className="text-red-600 border-red-600 hover:bg-red-50 w-full md:w-auto"
               disabled={isSubmitting}
             >
               {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
@@ -194,43 +201,50 @@ const ShoppingListTab: React.FC = () => {
                 const subtotal = calculateSubtotal(listItem.quantity, listItem.unit_price);
                 
                 return (
-                  <div key={listItem.id} className="flex items-center gap-4 p-4 border rounded-lg">
-                    <div className="flex-1">
-                      <div className="font-medium">{item?.name}</div>
-                      <div className="text-sm text-gray-500">
+                  <div key={listItem.id} className="flex flex-col space-y-3 p-4 border rounded-lg md:flex-row md:items-center md:space-y-0 md:gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-sm md:text-base truncate">{item?.name}</div>
+                      <div className="text-xs md:text-sm text-gray-500">
                         {item && getCategoryName(item.category_id)} {item?.unit && `• ${item.unit}`}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="number"
-                        min="1"
-                        value={listItem.quantity}
-                        onChange={(e) => handleUpdateItem(listItem.id, parseInt(e.target.value) || 1, listItem.unit_price)}
-                        className="w-20"
-                      />
-                      <span className="text-sm text-gray-500">x</span>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        placeholder="R$ 0,00"
-                        value={listItem.unit_price || ''}
-                        onChange={(e) => handleUpdateItem(listItem.id, listItem.quantity, parseFloat(e.target.value) || undefined)}
-                        className="w-24"
-                      />
-                      {listItem.unit_price && (
-                        <div className="text-success font-semibold w-20 text-right">
-                          R$ {subtotal.toFixed(2)}
+                    <div className="flex flex-col space-y-2 md:flex-row md:items-center md:space-y-0 md:gap-2">
+                      <div className="grid grid-cols-2 gap-2 md:flex md:items-center md:gap-2">
+                        <Input
+                          type="number"
+                          min="1"
+                          value={listItem.quantity}
+                          onChange={(e) => handleUpdateItem(listItem.id, parseInt(e.target.value) || 1, listItem.unit_price)}
+                          className="w-full md:w-20 text-sm"
+                        />
+                        <div className="flex items-center gap-1 md:gap-2">
+                          <span className="text-xs md:text-sm text-gray-500">x</span>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="R$ 0,00"
+                            value={listItem.unit_price || ''}
+                            onChange={(e) => handleUpdateItem(listItem.id, listItem.quantity, parseFloat(e.target.value) || undefined)}
+                            className="w-full md:w-24 text-sm"
+                          />
                         </div>
-                      )}
-                      <Button
-                        onClick={() => handleRemoveItem(listItem.id)}
-                        variant="destructive"
-                        size="sm"
-                        disabled={isSubmitting}
-                      >
-                        {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash className="w-4 h-4" />}
-                      </Button>
+                      </div>
+                      <div className="flex items-center justify-between md:justify-start md:gap-2">
+                        {listItem.unit_price && (
+                          <div className="text-success font-semibold text-sm md:text-base md:w-20 md:text-right">
+                            R$ {subtotal.toFixed(2)}
+                          </div>
+                        )}
+                        <Button
+                          onClick={() => handleRemoveItem(listItem.id)}
+                          variant="destructive"
+                          size="sm"
+                          disabled={isSubmitting}
+                          className="ml-auto md:ml-0"
+                        >
+                          {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash className="w-4 h-4" />}
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 );
@@ -239,8 +253,8 @@ const ShoppingListTab: React.FC = () => {
             
             {calculateTotal() > 0 && (
               <div className="mt-6 p-4 bg-success/10 rounded-lg">
-                <div className="text-right">
-                  <div className="text-2xl font-bold text-success">
+                <div className="text-center md:text-right">
+                  <div className="text-xl md:text-2xl font-bold text-success">
                     Valor Total: R$ {calculateTotal().toFixed(2)}
                   </div>
                 </div>
