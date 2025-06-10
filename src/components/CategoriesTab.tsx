@@ -4,17 +4,18 @@ import { useAppContext } from '../context/AppContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trash, Plus, Check } from 'lucide-react';
+import { Trash, Plus, Check, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const CategoriesTab: React.FC = () => {
-  const { categories, addCategory, editCategory, deleteCategory } = useAppContext();
+  const { categories, addCategory, editCategory, deleteCategory, loading } = useAppContext();
   const { toast } = useToast();
   const [newCategoryName, setNewCategoryName] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleAddCategory = () => {
+  const handleAddCategory = async () => {
     if (!newCategoryName.trim()) {
       toast({
         title: "Erro",
@@ -23,15 +24,27 @@ const CategoriesTab: React.FC = () => {
       });
       return;
     }
-    addCategory(newCategoryName.trim());
-    setNewCategoryName('');
-    toast({
-      title: "Sucesso",
-      description: "Categoria adicionada com sucesso"
-    });
+    
+    try {
+      setIsSubmitting(true);
+      await addCategory(newCategoryName.trim());
+      setNewCategoryName('');
+      toast({
+        title: "Sucesso",
+        description: "Categoria adicionada com sucesso"
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao adicionar categoria",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleEditCategory = (id: string) => {
+  const handleEditCategory = async (id: string) => {
     if (!editingName.trim()) {
       toast({
         title: "Erro",
@@ -40,27 +53,58 @@ const CategoriesTab: React.FC = () => {
       });
       return;
     }
-    editCategory(id, editingName.trim());
-    setEditingId(null);
-    setEditingName('');
-    toast({
-      title: "Sucesso",
-      description: "Categoria editada com sucesso"
-    });
+    
+    try {
+      setIsSubmitting(true);
+      await editCategory(id, editingName.trim());
+      setEditingId(null);
+      setEditingName('');
+      toast({
+        title: "Sucesso",
+        description: "Categoria editada com sucesso"
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao editar categoria",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleDeleteCategory = (id: string) => {
-    deleteCategory(id);
-    toast({
-      title: "Sucesso",
-      description: "Categoria excluída com sucesso"
-    });
+  const handleDeleteCategory = async (id: string) => {
+    try {
+      setIsSubmitting(true);
+      await deleteCategory(id);
+      toast({
+        title: "Sucesso",
+        description: "Categoria excluída com sucesso"
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao excluir categoria",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const startEditing = (id: string, name: string) => {
     setEditingId(id);
     setEditingName(name);
   };
+
+  if (loading) {
+    return (
+      <div className="max-w-4xl mx-auto p-6 flex justify-center items-center">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto p-6">
@@ -74,14 +118,16 @@ const CategoriesTab: React.FC = () => {
               placeholder="Nome da categoria"
               value={newCategoryName}
               onChange={(e) => setNewCategoryName(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleAddCategory()}
+              onKeyPress={(e) => e.key === 'Enter' && !isSubmitting && handleAddCategory()}
               className="flex-1"
+              disabled={isSubmitting}
             />
             <Button 
               onClick={handleAddCategory}
               className="checkmarket-orange checkmarket-hover-orange"
+              disabled={isSubmitting}
             >
-              <Plus className="w-4 h-4 mr-2" />
+              {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
               Adicionar
             </Button>
           </div>
@@ -98,22 +144,24 @@ const CategoriesTab: React.FC = () => {
                     <Input
                       value={editingName}
                       onChange={(e) => setEditingName(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && handleEditCategory(category.id)}
+                      onKeyPress={(e) => e.key === 'Enter' && !isSubmitting && handleEditCategory(category.id)}
                       className="flex-1"
+                      disabled={isSubmitting}
                     />
                     <Button
                       onClick={() => handleEditCategory(category.id)}
                       size="sm"
                       className="checkmarket-green checkmarket-hover-green"
+                      disabled={isSubmitting}
                     >
-                      <Check className="w-4 h-4" />
+                      {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                     </Button>
                   </div>
                 ) : (
                   <>
                     <span 
                       className="text-lg font-medium cursor-pointer hover:text-primary"
-                      onClick={() => startEditing(category.id, category.name)}
+                      onClick={() => !isSubmitting && startEditing(category.id, category.name)}
                     >
                       {category.name}
                     </span>
@@ -121,8 +169,9 @@ const CategoriesTab: React.FC = () => {
                       onClick={() => handleDeleteCategory(category.id)}
                       variant="destructive"
                       size="sm"
+                      disabled={isSubmitting}
                     >
-                      <Trash className="w-4 h-4" />
+                      {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash className="w-4 h-4" />}
                     </Button>
                   </>
                 )}

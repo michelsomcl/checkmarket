@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash, Plus } from 'lucide-react';
+import { Trash, Plus, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const ShoppingListTab: React.FC = () => {
@@ -16,12 +16,14 @@ const ShoppingListTab: React.FC = () => {
     addToShoppingList, 
     updateShoppingListItem, 
     removeFromShoppingList, 
-    clearShoppingList 
+    clearShoppingList,
+    loading 
   } = useAppContext();
   const { toast } = useToast();
   const [newListItem, setNewListItem] = useState({ itemId: '', quantity: 1, unitPrice: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleAddToList = () => {
+  const handleAddToList = async () => {
     if (!newListItem.itemId) {
       toast({
         title: "Erro",
@@ -31,25 +33,70 @@ const ShoppingListTab: React.FC = () => {
       return;
     }
     
-    const unitPrice = newListItem.unitPrice ? parseFloat(newListItem.unitPrice) : undefined;
-    addToShoppingList(newListItem.itemId, newListItem.quantity, unitPrice);
-    setNewListItem({ itemId: '', quantity: 1, unitPrice: '' });
-    toast({
-      title: "Sucesso",
-      description: "Item adicionado à lista"
-    });
+    try {
+      setIsSubmitting(true);
+      const unitPrice = newListItem.unitPrice ? parseFloat(newListItem.unitPrice) : undefined;
+      await addToShoppingList(newListItem.itemId, newListItem.quantity, unitPrice);
+      setNewListItem({ itemId: '', quantity: 1, unitPrice: '' });
+      toast({
+        title: "Sucesso",
+        description: "Item adicionado à lista"
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao adicionar item à lista",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleUpdateItem = (id: string, quantity: number, unitPrice?: number) => {
-    updateShoppingListItem(id, quantity, unitPrice);
+  const handleUpdateItem = async (id: string, quantity: number, unitPrice?: number) => {
+    try {
+      await updateShoppingListItem(id, quantity, unitPrice);
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar item",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleClearList = () => {
-    clearShoppingList();
-    toast({
-      title: "Lista limpa",
-      description: "Todos os itens foram removidos da lista"
-    });
+  const handleRemoveItem = async (id: string) => {
+    try {
+      setIsSubmitting(true);
+      await removeFromShoppingList(id);
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao remover item",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleClearList = async () => {
+    try {
+      setIsSubmitting(true);
+      await clearShoppingList();
+      toast({
+        title: "Lista limpa",
+        description: "Todos os itens foram removidos da lista"
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao limpar lista",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const getItemById = (itemId: string) => {
@@ -66,9 +113,17 @@ const ShoppingListTab: React.FC = () => {
 
   const calculateTotal = () => {
     return shoppingList.reduce((total, listItem) => {
-      return total + calculateSubtotal(listItem.quantity, listItem.unitPrice);
+      return total + calculateSubtotal(listItem.quantity, listItem.unit_price);
     }, 0);
   };
+
+  if (loading) {
+    return (
+      <div className="max-w-4xl mx-auto p-6 flex justify-center items-center">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto p-6">
@@ -78,14 +133,14 @@ const ShoppingListTab: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Select value={newListItem.itemId} onValueChange={(value) => setNewListItem({ ...newListItem, itemId: value })}>
+            <Select value={newListItem.itemId} onValueChange={(value) => setNewListItem({ ...newListItem, itemId: value })} disabled={isSubmitting}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o item" />
               </SelectTrigger>
               <SelectContent className="bg-white max-h-48 overflow-y-auto">
                 {items.map((item) => (
                   <SelectItem key={item.id} value={item.id}>
-                    {item.name} ({getCategoryName(item.categoryId)})
+                    {item.name} ({getCategoryName(item.category_id)})
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -96,6 +151,7 @@ const ShoppingListTab: React.FC = () => {
               min="1"
               value={newListItem.quantity}
               onChange={(e) => setNewListItem({ ...newListItem, quantity: parseInt(e.target.value) || 1 })}
+              disabled={isSubmitting}
             />
             <Input
               type="number"
@@ -103,12 +159,14 @@ const ShoppingListTab: React.FC = () => {
               placeholder="Valor unitário (R$)"
               value={newListItem.unitPrice}
               onChange={(e) => setNewListItem({ ...newListItem, unitPrice: e.target.value })}
+              disabled={isSubmitting}
             />
             <Button 
               onClick={handleAddToList}
               className="checkmarket-orange checkmarket-hover-orange"
+              disabled={isSubmitting}
             >
-              <Plus className="w-4 h-4 mr-2" />
+              {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
               Adicionar
             </Button>
           </div>
@@ -123,22 +181,24 @@ const ShoppingListTab: React.FC = () => {
               onClick={handleClearList}
               variant="outline"
               className="text-red-600 border-red-600 hover:bg-red-50"
+              disabled={isSubmitting}
             >
+              {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
               Reiniciar Lista
             </Button>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               {shoppingList.map((listItem) => {
-                const item = getItemById(listItem.itemId);
-                const subtotal = calculateSubtotal(listItem.quantity, listItem.unitPrice);
+                const item = getItemById(listItem.item_id);
+                const subtotal = calculateSubtotal(listItem.quantity, listItem.unit_price);
                 
                 return (
                   <div key={listItem.id} className="flex items-center gap-4 p-4 border rounded-lg">
                     <div className="flex-1">
                       <div className="font-medium">{item?.name}</div>
                       <div className="text-sm text-gray-500">
-                        {item && getCategoryName(item.categoryId)} {item?.unit && `• ${item.unit}`}
+                        {item && getCategoryName(item.category_id)} {item?.unit && `• ${item.unit}`}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -146,7 +206,7 @@ const ShoppingListTab: React.FC = () => {
                         type="number"
                         min="1"
                         value={listItem.quantity}
-                        onChange={(e) => handleUpdateItem(listItem.id, parseInt(e.target.value) || 1, listItem.unitPrice)}
+                        onChange={(e) => handleUpdateItem(listItem.id, parseInt(e.target.value) || 1, listItem.unit_price)}
                         className="w-20"
                       />
                       <span className="text-sm text-gray-500">x</span>
@@ -154,21 +214,22 @@ const ShoppingListTab: React.FC = () => {
                         type="number"
                         step="0.01"
                         placeholder="R$ 0,00"
-                        value={listItem.unitPrice || ''}
+                        value={listItem.unit_price || ''}
                         onChange={(e) => handleUpdateItem(listItem.id, listItem.quantity, parseFloat(e.target.value) || undefined)}
                         className="w-24"
                       />
-                      {listItem.unitPrice && (
+                      {listItem.unit_price && (
                         <div className="text-success font-semibold w-20 text-right">
                           R$ {subtotal.toFixed(2)}
                         </div>
                       )}
                       <Button
-                        onClick={() => removeFromShoppingList(listItem.id)}
+                        onClick={() => handleRemoveItem(listItem.id)}
                         variant="destructive"
                         size="sm"
+                        disabled={isSubmitting}
                       >
-                        <Trash className="w-4 h-4" />
+                        {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash className="w-4 h-4" />}
                       </Button>
                     </div>
                   </div>
