@@ -7,7 +7,7 @@ const Footer: React.FC = () => {
       <div className="max-w-7xl mx-auto py-6 px-4">
         <div className="text-center text-gray-600">
           <p className="text-sm">
-            © {new Date().getFullYear()} <span className="font-semibold text-primary">Checkmarket</span>. 
+            © {new Date().getFullYear()} <span className="font-semibold text-primary">Checkmarket</span> é uma marca Vibesys Sistemas. 
             Todos os direitos reservados.
           </p>
           <p className="text-xs mt-1">
