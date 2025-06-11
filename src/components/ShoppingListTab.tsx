@@ -261,21 +261,17 @@ const ShoppingListTab: React.FC = () => {
                           type="text"
                           value={listItem.quantity.toString()}
                           onChange={(e) => {
-                            const value = e.target.value;
-                            // Permite apenas números e string vazia
-                            if (value === '' || /^\d+$/.test(value)) {
-                              const numericValue = value === '' ? 1 : parseInt(value);
-                              if (numericValue >= 1) {
-                                handleUpdateItem(listItem.id, numericValue, listItem.unit_price, listItem.purchased);
-                              }
-                            }
-                          }}
-                          onBlur={(e) => {
-                            const value = e.target.value;
-                            if (value === '' || parseInt(value) < 1) {
-                              handleUpdateItem(listItem.id, 1, listItem.unit_price, listItem.purchased);
-                            }
-                          }}
+  const value = e.target.value;
+  // Permite vazio durante edição
+  const updatedValue = value === '' ? '' : value;
+  updateShoppingListItem(listItem.id, parseInt(updatedValue || '0') || 1, listItem.unit_price, listItem.purchased);
+}}
+onBlur={(e) => {
+  const value = e.target.value;
+  const numericValue = parseInt(value || '0');
+  const finalValue = isNaN(numericValue) || numericValue < 1 ? 1 : numericValue;
+  handleUpdateItem(listItem.id, finalValue, listItem.unit_price, listItem.purchased);
+}}
                           className="w-full md:w-20 text-sm"
                         />
                         <div className="flex items-center gap-1 md:gap-2">
@@ -283,15 +279,17 @@ const ShoppingListTab: React.FC = () => {
                           <Input
                             type="text"
                             placeholder="R$ 0,00"
-                            value={listItem.unit_price ? listItem.unit_price.toString() : ''}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              // Permite apenas números, ponto decimal e string vazia
-                              if (value === '' || /^\d*\.?\d*$/.test(value)) {
-                                const numericValue = value === '' ? undefined : parseFloat(value) || undefined;
-                                handleUpdateItem(listItem.id, listItem.quantity, numericValue, listItem.purchased);
-                              }
-                            }}
+                            value={listItem.unit_price !== undefined ? listItem.unit_price.toFixed(2).replace('.', ',') : ''}
+onChange={(e) => {
+  const value = e.target.value;
+
+  // Permite apagar e digitar vírgula como separador
+  if (/^\d*(,\d{0,2})?$/.test(value) || value === '') {
+    const formattedValue = value.replace(',', '.'); // converte vírgula para ponto
+    const numericValue = formattedValue === '' ? undefined : parseFloat(formattedValue);
+    handleUpdateItem(listItem.id, listItem.quantity, numericValue, listItem.purchased);
+  }
+}}
                             className="w-full md:w-24 text-sm"
                           />
                         </div>
