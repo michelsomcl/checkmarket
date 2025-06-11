@@ -171,23 +171,33 @@ const ShoppingListTab: React.FC = () => {
             </div>
             <div className="md:col-span-1">
               <Input
-                type="number"
-                placeholder="Quantidade"
-                min="1"
-                value={newListItem.quantity}
-                onChange={(e) => setNewListItem({ ...newListItem, quantity: e.target.value })}
-                disabled={isSubmitting}
-              />
+  type="text"
+  placeholder="Quantidade"
+  value={newListItem.quantity}
+  onChange={(e) => {
+    const value = e.target.value;
+    // Aceita apenas números inteiros ou vazio
+    if (/^\d*$/.test(value)) {
+      setNewListItem({ ...newListItem, quantity: value });
+    }
+  }}
+  disabled={isSubmitting}
+/>
             </div>
             <div className="md:col-span-1">
               <Input
-                type="number"
-                step="0.01"
-                placeholder="Valor unitário (R$)"
-                value={newListItem.unitPrice}
-                onChange={(e) => setNewListItem({ ...newListItem, unitPrice: e.target.value })}
-                disabled={isSubmitting}
-              />
+  type="text"
+  placeholder="Valor unitário (R$)"
+  value={newListItem.unitPrice}
+  onChange={(e) => {
+    const value = e.target.value;
+    // Aceita número com ponto ou vírgula, ou vazio
+    if (/^\d*([.,]\d{0,2})?$/.test(value)) {
+      setNewListItem({ ...newListItem, unitPrice: value });
+    }
+  }}
+  disabled={isSubmitting}
+/>
             </div>
             <div className="md:col-span-1">
               <Button 
