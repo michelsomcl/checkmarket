@@ -263,12 +263,10 @@ const ShoppingListTab: React.FC = () => {
                           onChange={(e) => {
                             const value = e.target.value;
                             // Permite apenas números e string vazia
-                            if (value === '' || /^\d+$/.test(value)) {
-                              const numericValue = value === '' ? 1 : parseInt(value);
-                              if (numericValue >= 1) {
-                                handleUpdateItem(listItem.id, numericValue, listItem.unit_price, listItem.purchased);
-                              }
-                            }
+                            if (/^\d*$/.test(value)) {
+  const numericValue = value === '' ? '' : parseInt(value);
+  handleUpdateItem(listItem.id, numericValue === '' ? 1 : numericValue, listItem.unit_price, listItem.purchased);
+}
                           }}
                           onBlur={(e) => {
                             const value = e.target.value;
@@ -287,10 +285,11 @@ const ShoppingListTab: React.FC = () => {
                             onChange={(e) => {
                               const value = e.target.value;
                               // Permite apenas números, ponto decimal e string vazia
-                              if (value === '' || /^\d*\.?\d*$/.test(value)) {
-                                const numericValue = value === '' ? undefined : parseFloat(value) || undefined;
-                                handleUpdateItem(listItem.id, listItem.quantity, numericValue, listItem.purchased);
-                              }
+                              const sanitizedValue = value.replace(',', '.');
+if (sanitizedValue === '' || /^\d*\.?\d*$/.test(sanitizedValue)) {
+  const numericValue = sanitizedValue === '' ? undefined : parseFloat(sanitizedValue);
+  handleUpdateItem(listItem.id, listItem.quantity, numericValue, listItem.purchased);
+}
                             }}
                             className="w-full md:w-24 text-sm"
                           />
