@@ -70,6 +70,7 @@ export type Database = {
           created_at: string
           id: string
           item_id: string
+          purchased: boolean
           quantity: number
           unit_price: number | null
           updated_at: string
@@ -78,6 +79,7 @@ export type Database = {
           created_at?: string
           id?: string
           item_id: string
+          purchased?: boolean
           quantity?: number
           unit_price?: number | null
           updated_at?: string
@@ -86,6 +88,7 @@ export type Database = {
           created_at?: string
           id?: string
           item_id?: string
+          purchased?: boolean
           quantity?: number
           unit_price?: number | null
           updated_at?: string
