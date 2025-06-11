@@ -185,13 +185,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const existingItem = shoppingList.find(item => item.item_id === itemId);
     
     if (existingItem) {
-      await updateShoppingListItem(existingItem.id, quantity, unitPrice);
+      await updateShoppingListItem(existingItem.id, quantity, unitPrice, existingItem.purchased);
       return;
     }
 
     const { data, error } = await supabase
       .from('shopping_list_items')
-      .insert([{ item_id: itemId, quantity, unit_price: unitPrice }])
+      .insert([{ item_id: itemId, quantity, unit_price: unitPrice, purchased: false }])
       .select()
       .single();
 
@@ -203,10 +203,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setShoppingList(prev => [...prev, data]);
   };
 
-  const updateShoppingListItem = async (id: string, quantity: number, unitPrice?: number) => {
+  const updateShoppingListItem = async (id: string, quantity: number, unitPrice?: number, purchased?: boolean) => {
+    const updateData: any = { quantity, unit_price: unitPrice, updated_at: new Date().toISOString() };
+    if (purchased !== undefined) {
+      updateData.purchased = purchased;
+    }
+
     const { data, error } = await supabase
       .from('shopping_list_items')
-      .update({ quantity, unit_price: unitPrice, updated_at: new Date().toISOString() })
+      .update(updateData)
       .eq('id', id)
       .select()
       .single();

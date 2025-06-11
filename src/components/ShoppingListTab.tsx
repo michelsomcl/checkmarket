@@ -1,10 +1,12 @@
+
 import React, { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash, Plus, Loader2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Trash, Plus, Loader2, Filter } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const ShoppingListTab: React.FC = () => {
@@ -21,6 +23,7 @@ const ShoppingListTab: React.FC = () => {
   const { toast } = useToast();
   const [newListItem, setNewListItem] = useState({ itemId: '', quantity: 1, unitPrice: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState('all');
 
   const handleAddToList = async () => {
     if (!newListItem.itemId) {
@@ -52,9 +55,9 @@ const ShoppingListTab: React.FC = () => {
     }
   };
 
-  const handleUpdateItem = async (id: string, quantity: number, unitPrice?: number) => {
+  const handleUpdateItem = async (id: string, quantity: number, unitPrice?: number, purchased?: boolean) => {
     try {
-      await updateShoppingListItem(id, quantity, unitPrice);
+      await updateShoppingListItem(id, quantity, unitPrice, purchased);
     } catch (error) {
       toast({
         title: "Erro",
@@ -110,11 +113,21 @@ const ShoppingListTab: React.FC = () => {
     return unitPrice ? quantity * unitPrice : 0;
   };
 
-  const calculateTotal = () => {
-    return shoppingList.reduce((total, listItem) => {
+  const filteredShoppingList = shoppingList.filter(listItem => {
+    if (categoryFilter === 'all') return true;
+    const item = getItemById(listItem.item_id);
+    return item?.category_id === categoryFilter;
+  });
+
+  const calculateTotal = (includeOnlyPurchased = false) => {
+    return filteredShoppingList.reduce((total, listItem) => {
+      if (includeOnlyPurchased && !listItem.purchased) return total;
       return total + calculateSubtotal(listItem.quantity, listItem.unit_price);
     }, 0);
   };
+
+  const totalListValue = calculateTotal();
+  const totalPurchasedValue = calculateTotal(true);
 
   if (loading) {
     return (
@@ -184,28 +197,52 @@ const ShoppingListTab: React.FC = () => {
         <Card className="mb-6">
           <CardHeader className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
             <CardTitle className="text-lg md:text-xl font-bold text-gray-800">Itens na Lista</CardTitle>
-            <Button 
-              onClick={handleClearList}
-              variant="outline"
-              className="text-red-600 border-red-600 hover:bg-red-50 w-full md:w-auto"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-              Reiniciar Lista
-            </Button>
+            <div className="flex flex-col space-y-2 md:flex-row md:items-center md:space-y-0 md:gap-4">
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4 text-gray-500" />
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger className="w-full md:w-48">
+                    <SelectValue placeholder="Filtrar por categoria" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white">
+                    <SelectItem value="all">Todas as categorias</SelectItem>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button 
+                onClick={handleClearList}
+                variant="outline"
+                className="text-red-600 border-red-600 hover:bg-red-50 w-full md:w-auto"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                Reiniciar Lista
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {shoppingList.map((listItem) => {
+              {filteredShoppingList.map((listItem) => {
                 const item = getItemById(listItem.item_id);
                 const subtotal = calculateSubtotal(listItem.quantity, listItem.unit_price);
                 
                 return (
                   <div key={listItem.id} className="flex flex-col space-y-3 p-4 border rounded-lg md:flex-row md:items-center md:space-y-0 md:gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm md:text-base truncate">{item?.name}</div>
-                      <div className="text-xs md:text-sm text-gray-500">
-                        {item && getCategoryName(item.category_id)} {item?.unit && `• ${item.unit}`}
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <Checkbox
+                        checked={listItem.purchased || false}
+                        onCheckedChange={(checked) => handleUpdateItem(listItem.id, listItem.quantity, listItem.unit_price, !!checked)}
+                      />
+                      <div className={`flex-1 ${listItem.purchased ? 'opacity-60 line-through' : ''}`}>
+                        <div className="font-medium text-sm md:text-base truncate">{item?.name}</div>
+                        <div className="text-xs md:text-sm text-gray-500">
+                          {item && getCategoryName(item.category_id)} {item?.unit && `• ${item.unit}`}
+                        </div>
                       </div>
                     </div>
                     <div className="flex flex-col space-y-2 md:flex-row md:items-center md:space-y-0 md:gap-2">
@@ -214,17 +251,20 @@ const ShoppingListTab: React.FC = () => {
                           type="number"
                           min="1"
                           value={listItem.quantity}
-                          onChange={(e) => handleUpdateItem(listItem.id, parseInt(e.target.value) || 1, listItem.unit_price)}
+                          onChange={(e) => handleUpdateItem(listItem.id, parseInt(e.target.value) || 1, listItem.unit_price, listItem.purchased)}
                           className="w-full md:w-20 text-sm"
                         />
                         <div className="flex items-center gap-1 md:gap-2">
                           <span className="text-xs md:text-sm text-gray-500">x</span>
                           <Input
-                            type="number"
-                            step="0.01"
+                            type="text"
                             placeholder="R$ 0,00"
                             value={listItem.unit_price || ''}
-                            onChange={(e) => handleUpdateItem(listItem.id, listItem.quantity, parseFloat(e.target.value) || undefined)}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              const numericValue = value === '' ? undefined : parseFloat(value);
+                              handleUpdateItem(listItem.id, listItem.quantity, numericValue, listItem.purchased);
+                            }}
                             className="w-full md:w-24 text-sm"
                           />
                         </div>
@@ -251,13 +291,24 @@ const ShoppingListTab: React.FC = () => {
               })}
             </div>
             
-            {calculateTotal() > 0 && (
-              <div className="mt-6 p-4 bg-success/10 rounded-lg">
-                <div className="text-center md:text-right">
-                  <div className="text-xl md:text-2xl font-bold text-success">
-                    Valor Total: R$ {calculateTotal().toFixed(2)}
+            {totalListValue > 0 && (
+              <div className="mt-6 space-y-4">
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <div className="text-center md:text-right">
+                    <div className="text-lg md:text-xl font-bold text-gray-700">
+                      Soma da Lista: R$ {totalListValue.toFixed(2)}
+                    </div>
                   </div>
                 </div>
+                {totalPurchasedValue > 0 && (
+                  <div className="p-4 bg-success/10 rounded-lg">
+                    <div className="text-center md:text-right">
+                      <div className="text-xl md:text-2xl font-bold text-success">
+                        Soma de Itens Comprados: R$ {totalPurchasedValue.toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
