@@ -21,7 +21,7 @@ const ShoppingListTab: React.FC = () => {
     loading 
   } = useAppContext();
   const { toast } = useToast();
-  const [newListItem, setNewListItem] = useState({ itemId: '', quantity: 1, unitPrice: '' });
+  const [newListItem, setNewListItem] = useState({ itemId: '', quantity: '', unitPrice: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState('all');
 
@@ -35,11 +35,21 @@ const ShoppingListTab: React.FC = () => {
       return;
     }
     
+    const quantity = parseInt(newListItem.quantity) || 1;
+    if (quantity < 1) {
+      toast({
+        title: "Erro",
+        description: "Quantidade deve ser maior que zero",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     try {
       setIsSubmitting(true);
       const unitPrice = newListItem.unitPrice ? parseFloat(newListItem.unitPrice) : undefined;
-      await addToShoppingList(newListItem.itemId, newListItem.quantity, unitPrice);
-      setNewListItem({ itemId: '', quantity: 1, unitPrice: '' });
+      await addToShoppingList(newListItem.itemId, quantity, unitPrice);
+      setNewListItem({ itemId: '', quantity: '', unitPrice: '' });
       toast({
         title: "Sucesso",
         description: "Item adicionado à lista"
@@ -165,7 +175,7 @@ const ShoppingListTab: React.FC = () => {
                 placeholder="Quantidade"
                 min="1"
                 value={newListItem.quantity}
-                onChange={(e) => setNewListItem({ ...newListItem, quantity: parseInt(e.target.value) || 1 })}
+                onChange={(e) => setNewListItem({ ...newListItem, quantity: e.target.value })}
                 disabled={isSubmitting}
               />
             </div>
@@ -251,18 +261,29 @@ const ShoppingListTab: React.FC = () => {
                           type="number"
                           min="1"
                           value={listItem.quantity}
-                          onChange={(e) => handleUpdateItem(listItem.id, parseInt(e.target.value) || 1, listItem.unit_price, listItem.purchased)}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            const numericValue = value === '' ? 1 : parseInt(value) || 1;
+                            handleUpdateItem(listItem.id, numericValue, listItem.unit_price, listItem.purchased);
+                          }}
+                          onBlur={(e) => {
+                            const value = e.target.value;
+                            if (value === '' || parseInt(value) < 1) {
+                              handleUpdateItem(listItem.id, 1, listItem.unit_price, listItem.purchased);
+                            }
+                          }}
                           className="w-full md:w-20 text-sm"
                         />
                         <div className="flex items-center gap-1 md:gap-2">
                           <span className="text-xs md:text-sm text-gray-500">x</span>
                           <Input
-                            type="text"
+                            type="number"
+                            step="0.01"
                             placeholder="R$ 0,00"
                             value={listItem.unit_price || ''}
                             onChange={(e) => {
                               const value = e.target.value;
-                              const numericValue = value === '' ? undefined : parseFloat(value);
+                              const numericValue = value === '' ? undefined : parseFloat(value) || undefined;
                               handleUpdateItem(listItem.id, listItem.quantity, numericValue, listItem.purchased);
                             }}
                             className="w-full md:w-24 text-sm"
