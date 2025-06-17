@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { Button } from '@/components/ui/button';
@@ -224,73 +223,71 @@ const ShoppingListTab: React.FC = () => {
 
       {shoppingList.length > 0 && (
         <Card className="mb-6">
-          <CardHeader className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
-            <CardTitle className="text-lg md:text-xl font-bold text-gray-800">Itens na Lista</CardTitle>
+          <CardHeader>
+            <CardTitle className="text-lg md:text-xl font-bold text-gray-800 mb-4">Itens na Lista</CardTitle>
             
-            <div className="flex flex-col space-y-2 md:flex-row md:items-center md:space-y-0 md:gap-4">
-              {/* Filtros */}
-              <div className="flex flex-col space-y-2 md:flex-row md:items-center md:space-y-0 md:gap-2">
-                <div className="flex items-center gap-2">
-                  <Search className="w-4 h-4 text-gray-500" />
-                  <Input
-                    placeholder="Buscar item..."
-                    value={searchFilter}
-                    onChange={(e) => setSearchFilter(e.target.value)}
-                    className="w-full md:w-32"
-                  />
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <Filter className="w-4 h-4 text-gray-500" />
-                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                    <SelectTrigger className="w-full md:w-48">
-                      <SelectValue placeholder="Categoria" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white">
-                      <SelectItem value="all">Todas as categorias</SelectItem>
-                      {categories.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-full md:w-32">
-                    <SelectValue placeholder="Status" />
+            {/* Botões de ação no topo */}
+            <div className="flex flex-col space-y-2 md:flex-row md:justify-end md:space-y-0 md:gap-2">
+              <Button 
+                onClick={exportToPDF}
+                variant="outline"
+                className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                disabled={isSubmitting}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Exportar PDF
+              </Button>
+              
+              <Button 
+                onClick={handleClearList}
+                variant="outline"
+                className="text-red-600 border-red-600 hover:bg-red-50"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                Reiniciar Lista
+              </Button>
+            </div>
+
+            {/* Filtros abaixo dos botões */}
+            <div className="flex flex-col space-y-2 md:flex-row md:items-center md:space-y-0 md:gap-4 pt-4 border-t">
+              <div className="flex items-center gap-2">
+                <Search className="w-4 h-4 text-gray-500" />
+                <Input
+                  placeholder="Buscar item..."
+                  value={searchFilter}
+                  onChange={(e) => setSearchFilter(e.target.value)}
+                  className="w-full md:w-48"
+                />
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4 text-gray-500" />
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger className="w-full md:w-48">
+                    <SelectValue placeholder="Categoria" />
                   </SelectTrigger>
                   <SelectContent className="bg-white">
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="pending">Pendentes</SelectItem>
-                    <SelectItem value="purchased">Comprados</SelectItem>
+                    <SelectItem value="all">Todas as categorias</SelectItem>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               
-              {/* Botões de ação */}
-              <div className="flex gap-2">
-                <Button 
-                  onClick={exportToPDF}
-                  variant="outline"
-                  className="text-blue-600 border-blue-600 hover:bg-blue-50"
-                  disabled={isSubmitting}
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Exportar PDF
-                </Button>
-                
-                <Button 
-                  onClick={handleClearList}
-                  variant="outline"
-                  className="text-red-600 border-red-600 hover:bg-red-50"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                  Reiniciar Lista
-                </Button>
-              </div>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full md:w-32">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent className="bg-white">
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="pending">Pendentes</SelectItem>
+                  <SelectItem value="purchased">Comprados</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </CardHeader>
           
