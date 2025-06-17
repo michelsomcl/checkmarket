@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { AppContextType, Category, Item, ShoppingListItem } from '../types';
 import { supabase } from '@/integrations/supabase/client';
@@ -181,14 +180,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const addToShoppingList = async (itemId: string, quantity: number, unitPrice?: number) => {
-    // Verificar se o item já existe na lista
-    const existingItem = shoppingList.find(item => item.item_id === itemId);
-    
-    if (existingItem) {
-      await updateShoppingListItem(existingItem.id, quantity, unitPrice, existingItem.purchased);
-      return;
-    }
-
     const { data, error } = await supabase
       .from('shopping_list_items')
       .insert([{ item_id: itemId, quantity, unit_price: unitPrice, purchased: false }])
