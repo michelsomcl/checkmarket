@@ -50,6 +50,23 @@ const ShoppingListItem: React.FC<ShoppingListItemProps> = ({
     onUpdate(listItem.id, listItem.quantity, listItem.unit_price, listItem.purchased, listItem.brand, date);
   };
 
+  const handlePurchasedChange = (checked: boolean) => {
+    let purchaseDate = listItem.purchase_date;
+    
+    if (checked) {
+      // Se marcou como comprado, preenche com a data atual se não tiver data
+      if (!purchaseDate) {
+        const today = new Date();
+        purchaseDate = today.toISOString().split('T')[0]; // Formato YYYY-MM-DD
+      }
+    } else {
+      // Se desmarcou, apaga a data
+      purchaseDate = '';
+    }
+    
+    onUpdate(listItem.id, listItem.quantity, listItem.unit_price, checked, listItem.brand, purchaseDate);
+  };
+
   const subtotal = calculateSubtotal(listItem.quantity, listItem.unit_price);
 
   return (
@@ -57,7 +74,7 @@ const ShoppingListItem: React.FC<ShoppingListItemProps> = ({
       <div className="flex items-center gap-3 flex-1 min-w-0">
         <Checkbox
           checked={listItem.purchased || false}
-          onCheckedChange={(checked) => onUpdate(listItem.id, listItem.quantity, listItem.unit_price, !!checked, listItem.brand, listItem.purchase_date)}
+          onCheckedChange={handlePurchasedChange}
         />
         <div className={`flex-1 ${listItem.purchased ? 'opacity-60 line-through' : ''}`}>
           <div className="font-medium text-sm md:text-base truncate">{item?.name}</div>
