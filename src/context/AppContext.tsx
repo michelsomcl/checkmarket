@@ -194,10 +194,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setShoppingList(prev => [...prev, data]);
   };
 
-  const updateShoppingListItem = async (id: string, quantity: number, unitPrice?: number, purchased?: boolean) => {
-    const updateData: any = { quantity, unit_price: unitPrice, updated_at: new Date().toISOString() };
+  const updateShoppingListItem = async (id: string, quantity: number, unitPrice?: number, purchased?: boolean, brand?: string, purchaseDate?: string) => {
+    const updateData: any = { 
+      quantity, 
+      unit_price: unitPrice, 
+      updated_at: new Date().toISOString() 
+    };
+    
     if (purchased !== undefined) {
       updateData.purchased = purchased;
+    }
+    if (brand !== undefined) {
+      updateData.brand = brand;
+    }
+    if (purchaseDate !== undefined) {
+      updateData.purchase_date = purchaseDate;
     }
 
     const { data, error } = await supabase
@@ -243,6 +254,87 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setShoppingList([]);
   };
 
+  const finalizeMonth = async () => {
+    const currentDate = new Date();
+    const month = currentDate.getMonth() + 1;
+    const year = currentDate.getFullYear();
+
+    try {
+      // Verificar se já existe uma lista para este mês/ano
+      const { data: existingList } = await supabase
+        .from('monthly_shopping_lists')
+        .select('*')
+        .eq('month', month)
+        .eq('year', year)
+        .single();
+
+      let monthlyListId = existingList?.id;
+
+      // Se não existir, criar uma nova lista mensal
+      if (!existingList) {
+        const { data: newMonthlyList, error: monthlyError } = await supabase
+          .from('monthly_shopping_lists')
+          .insert([{
+            month,
+            year,
+            items_count: shoppingList.length,
+            total_value: shoppingList.reduce((total, item) => 
+              total + (item.unit_price ? item.quantity * item.unit_price : 0), 0
+            )
+          }])
+          .select()
+          .single();
+
+        if (monthlyError) {
+          console.error('Erro ao criar lista mensal:', monthlyError);
+          throw monthlyError;
+        }
+
+        monthlyListId = newMonthlyList.id;
+      }
+
+      // Copiar todos os itens da lista atual para o histórico mensal
+      const itemsToMove = shoppingList.map(item => ({
+        monthly_list_id: monthlyListId,
+        item_id: item.item_id,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        brand: item.brand,
+        purchase_date: item.purchase_date,
+        purchased: item.purchased
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('monthly_shopping_list_items')
+        .insert(itemsToMove);
+
+      if (itemsError) {
+        console.error('Erro ao mover itens para histórico:', itemsError);
+        throw itemsError;
+      }
+
+      // Finalizar a lista mensal se ainda não foi finalizada
+      if (!existingList || !existingList.finalized_at) {
+        const { error: finalizeError } = await supabase
+          .from('monthly_shopping_lists')
+          .update({ finalized_at: new Date().toISOString() })
+          .eq('id', monthlyListId);
+
+        if (finalizeError) {
+          console.error('Erro ao finalizar lista mensal:', finalizeError);
+          throw finalizeError;
+        }
+      }
+
+      // Limpar a lista atual
+      await clearShoppingList();
+
+    } catch (error) {
+      console.error('Erro ao finalizar mês:', error);
+      throw error;
+    }
+  };
+
   const value: AppContextType = {
     categories,
     items,
@@ -257,7 +349,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addToShoppingList,
     updateShoppingListItem,
     removeFromShoppingList,
-    clearShoppingList
+    clearShoppingList,
+    finalizeMonth
   };
 
   return (

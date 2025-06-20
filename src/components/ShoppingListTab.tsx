@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { Button } from '@/components/ui/button';
@@ -16,7 +15,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Loader2, Filter, Download, Search } from 'lucide-react';
+import { Loader2, Filter, Download, Search, Archive } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import AddToListForm from './shopping-list/AddToListForm';
@@ -32,6 +31,7 @@ const ShoppingListTab: React.FC = () => {
     updateShoppingListItem, 
     removeFromShoppingList, 
     clearShoppingList,
+    finalizeMonth,
     loading 
   } = useAppContext();
   const { toast } = useToast();
@@ -40,9 +40,9 @@ const ShoppingListTab: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchFilter, setSearchFilter] = useState('');
 
-  const handleUpdateItem = async (id: string, quantity: number, unitPrice?: number, purchased?: boolean) => {
+  const handleUpdateItem = async (id: string, quantity: number, unitPrice?: number, purchased?: boolean, brand?: string, purchaseDate?: string) => {
     try {
-      await updateShoppingListItem(id, quantity, unitPrice, purchased);
+      await updateShoppingListItem(id, quantity, unitPrice, purchased, brand, purchaseDate);
     } catch (error) {
       toast({
         title: "Erro",
@@ -86,6 +86,25 @@ const ShoppingListTab: React.FC = () => {
     }
   };
 
+  const handleFinalizeMonth = async () => {
+    try {
+      setIsSubmitting(true);
+      await finalizeMonth();
+      toast({
+        title: "Mês finalizado",
+        description: "Lista foi salva no histórico e uma nova lista foi iniciada"
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao finalizar mês",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleAddToShoppingList = async (itemId: string, quantity: number, unitPrice?: number) => {
     // Permitir itens repetidos - remover verificação de item existente
     try {
@@ -120,9 +139,10 @@ const ShoppingListTab: React.FC = () => {
     // Cabeçalho da tabela
     doc.setFontSize(10);
     doc.text('Item', 20, yPosition);
-    doc.text('Categoria', 80, yPosition);
-    doc.text('Qtd', 130, yPosition);
-    doc.text('Preço Un.', 150, yPosition);
+    doc.text('Categoria', 70, yPosition);
+    doc.text('Marca', 110, yPosition);
+    doc.text('Qtd', 140, yPosition);
+    doc.text('Preço Un.', 155, yPosition);
     doc.text('Total', 180, yPosition);
     
     yPosition += 10;
@@ -144,9 +164,10 @@ const ShoppingListTab: React.FC = () => {
       }
       
       doc.text(item?.name || '', 20, yPosition);
-      doc.text(categoryName, 80, yPosition);
-      doc.text(listItem.quantity.toString(), 130, yPosition);
-      doc.text(listItem.unit_price ? `R$ ${listItem.unit_price.toFixed(2)}` : '', 150, yPosition);
+      doc.text(categoryName, 70, yPosition);
+      doc.text(listItem.brand || '', 110, yPosition);
+      doc.text(listItem.quantity.toString(), 140, yPosition);
+      doc.text(listItem.unit_price ? `R$ ${listItem.unit_price.toFixed(2)}` : '', 155, yPosition);
       doc.text(listItem.unit_price ? `R$ ${subtotal.toFixed(2)}` : '', 180, yPosition);
       
       if (listItem.purchased) {
@@ -249,6 +270,36 @@ const ShoppingListTab: React.FC = () => {
                 <Download className="w-4 h-4 mr-2" />
                 Exportar PDF
               </Button>
+
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button 
+                    variant="outline"
+                    className="text-green-600 border-green-600 hover:bg-green-50"
+                    disabled={isSubmitting}
+                  >
+                    <Archive className="w-4 h-4 mr-2" />
+                    Finalizar Mês
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Finalizar Mês</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Tem certeza que deseja finalizar o mês? Esta ação irá salvar a lista atual no histórico mensal e iniciar uma nova lista vazia.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={handleFinalizeMonth}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      Finalizar
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
               
               <AlertDialog>
                 <AlertDialogTrigger asChild>

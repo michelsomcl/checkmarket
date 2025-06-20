@@ -65,29 +65,122 @@ export type Database = {
           },
         ]
       }
-      shopping_list_items: {
+      monthly_shopping_list_items: {
         Row: {
+          brand: string | null
           created_at: string
           id: string
           item_id: string
+          monthly_list_id: string
+          purchase_date: string | null
           purchased: boolean
           quantity: number
           unit_price: number | null
           updated_at: string
         }
         Insert: {
+          brand?: string | null
           created_at?: string
           id?: string
           item_id: string
+          monthly_list_id: string
+          purchase_date?: string | null
           purchased?: boolean
           quantity?: number
           unit_price?: number | null
           updated_at?: string
         }
         Update: {
+          brand?: string | null
           created_at?: string
           id?: string
           item_id?: string
+          monthly_list_id?: string
+          purchase_date?: string | null
+          purchased?: boolean
+          quantity?: number
+          unit_price?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monthly_shopping_list_items_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "monthly_shopping_list_items_monthly_list_id_fkey"
+            columns: ["monthly_list_id"]
+            isOneToOne: false
+            referencedRelation: "monthly_shopping_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      monthly_shopping_lists: {
+        Row: {
+          created_at: string
+          finalized_at: string | null
+          id: string
+          items_count: number | null
+          month: number
+          total_value: number | null
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          finalized_at?: string | null
+          id?: string
+          items_count?: number | null
+          month: number
+          total_value?: number | null
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          created_at?: string
+          finalized_at?: string | null
+          id?: string
+          items_count?: number | null
+          month?: number
+          total_value?: number | null
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
+      shopping_list_items: {
+        Row: {
+          brand: string | null
+          created_at: string
+          id: string
+          item_id: string
+          purchase_date: string | null
+          purchased: boolean
+          quantity: number
+          unit_price: number | null
+          updated_at: string
+        }
+        Insert: {
+          brand?: string | null
+          created_at?: string
+          id?: string
+          item_id: string
+          purchase_date?: string | null
+          purchased?: boolean
+          quantity?: number
+          unit_price?: number | null
+          updated_at?: string
+        }
+        Update: {
+          brand?: string | null
+          created_at?: string
+          id?: string
+          item_id?: string
+          purchase_date?: string | null
           purchased?: boolean
           quantity?: number
           unit_price?: number | null
