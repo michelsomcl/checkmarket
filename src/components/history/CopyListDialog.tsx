@@ -1,11 +1,13 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Checkbox } from '../ui/checkbox';
+import { Input } from '../ui/input';
 import { useAppContext } from '../../context/AppContext';
 import { MonthlyShoppingList, MonthlyShoppingListItem } from '../../types';
 import { useToast } from '@/hooks/use-toast';
+import { Search } from 'lucide-react';
 
 interface CopyListDialogProps {
   isOpen: boolean;
@@ -24,6 +26,7 @@ const CopyListDialog: React.FC<CopyListDialogProps> = ({
   const { toast } = useToast();
   const [selectedItems, setSelectedItems] = useState<{ [key: string]: boolean }>({});
   const [copying, setCopying] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const getItemName = (itemId: string) => {
     const item = items.find(i => i.id === itemId);
@@ -38,6 +41,20 @@ const CopyListDialog: React.FC<CopyListDialogProps> = ({
     return months[month - 1];
   };
 
+  // Filtrar e ordenar itens alfabeticamente
+  const filteredAndSortedItems = useMemo(() => {
+    return monthlyItems
+      .filter(item => {
+        const itemName = getItemName(item.item_id).toLowerCase();
+        return itemName.includes(searchTerm.toLowerCase());
+      })
+      .sort((a, b) => {
+        const nameA = getItemName(a.item_id).toLowerCase();
+        const nameB = getItemName(b.item_id).toLowerCase();
+        return nameA.localeCompare(nameB);
+      });
+  }, [monthlyItems, searchTerm, items]);
+
   const handleItemToggle = (itemId: string, checked: boolean) => {
     setSelectedItems(prev => ({
       ...prev,
@@ -46,14 +63,17 @@ const CopyListDialog: React.FC<CopyListDialogProps> = ({
   };
 
   const handleSelectAll = () => {
-    const allSelected = monthlyItems.every(item => selectedItems[item.id]);
+    const allSelected = filteredAndSortedItems.every(item => selectedItems[item.id]);
     const newSelection: { [key: string]: boolean } = {};
     
-    monthlyItems.forEach(item => {
+    filteredAndSortedItems.forEach(item => {
       newSelection[item.id] = !allSelected;
     });
     
-    setSelectedItems(newSelection);
+    setSelectedItems(prev => ({
+      ...prev,
+      ...newSelection
+    }));
   };
 
   const handleCopyItems = async () => {
@@ -94,6 +114,7 @@ const CopyListDialog: React.FC<CopyListDialogProps> = ({
   };
 
   const selectedCount = Object.values(selectedItems).filter(Boolean).length;
+  const filteredSelectedCount = filteredAndSortedItems.filter(item => selectedItems[item.id]).length;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -105,28 +126,47 @@ const CopyListDialog: React.FC<CopyListDialogProps> = ({
         </DialogHeader>
 
         <div className="flex-1 overflow-hidden flex flex-col">
-          <div className="flex justify-between items-center mb-4">
-            <p className="text-sm text-gray-600">
+          <div className="mb-4">
+            <p className="text-sm text-gray-600 mb-3">
               Selecione os itens que deseja copiar para a lista atual:
             </p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSelectAll}
-              className="text-xs"
-            >
-              {monthlyItems.every(item => selectedItems[item.id]) ? 'Desmarcar Todos' : 'Marcar Todos'}
-            </Button>
+            
+            {/* Campo de busca */}
+            <div className="relative mb-3">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Buscar itens..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            {/* Botão selecionar todos */}
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-500">
+                {filteredAndSortedItems.length} itens encontrados
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSelectAll}
+                className="text-xs"
+                disabled={filteredAndSortedItems.length === 0}
+              >
+                {filteredAndSortedItems.every(item => selectedItems[item.id]) ? 'Desmarcar Todos' : 'Marcar Todos'}
+              </Button>
+            </div>
           </div>
 
           <div className="flex-1 overflow-y-auto border rounded-lg">
-            {monthlyItems.length === 0 ? (
+            {filteredAndSortedItems.length === 0 ? (
               <div className="p-4 text-center text-gray-500">
-                Esta lista não possui itens.
+                {searchTerm ? 'Nenhum item encontrado para a busca.' : 'Esta lista não possui itens.'}
               </div>
             ) : (
               <div className="space-y-2 p-4">
-                {monthlyItems.map((item) => (
+                {filteredAndSortedItems.map((item) => (
                   <div key={item.id} className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded">
                     <Checkbox
                       checked={selectedItems[item.id] || false}
