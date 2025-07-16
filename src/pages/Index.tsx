@@ -5,6 +5,7 @@ import Navigation from '../components/Navigation';
 import CategoriesTab from '../components/CategoriesTab';
 import ItemsTab from '../components/ItemsTab';
 import ShoppingListTab from '../components/ShoppingListTab';
+import HistoryTab from '../components/HistoryTab';
 import Footer from '../components/Footer';
 
 const Index = () => {
@@ -18,6 +19,8 @@ const Index = () => {
         return <ItemsTab />;
       case 'shopping':
         return <ShoppingListTab />;
+      case 'history':
+        return <HistoryTab />;
       default:
         return <CategoriesTab />;
     }

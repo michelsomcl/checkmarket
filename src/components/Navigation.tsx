@@ -11,7 +11,8 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }) => {
   const tabs = [
     { id: 'categories', label: 'Categorias' },
     { id: 'items', label: 'Itens' },
-    { id: 'shopping', label: 'Lista de Compras' }
+    { id: 'shopping', label: 'Lista de Compras' },
+    { id: 'history', label: 'Histórico' }
   ];
 
   return (
